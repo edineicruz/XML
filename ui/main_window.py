@@ -263,9 +263,13 @@ class DocumentImportWorker(QThread):
 class MainWindow(QMainWindow):
     """Professional main window for XML Fiscal Manager Pro"""
     
-    def __init__(self, config, auth_manager, db_manager):
-        """Initialize main window with enhanced XML model management"""
-        super().__init__()
+    def __init__(self, config, auth_manager, db_manager, update_manager=None, parent=None):
+        super().__init__(parent)
+        
+        self.config = config
+        self.auth_manager = auth_manager
+        self.db_manager = db_manager
+        self.update_manager = update_manager
         
         # Store core components
         self.config = config
@@ -2093,16 +2097,26 @@ class MainWindow(QMainWindow):
     def _check_for_updates(self):
         """Check for application updates"""
         try:
+            if not self.update_manager:
+                QMessageBox.warning(
+                    self,
+                    "Recurso Indisponível",
+                    "Sistema de atualizações não está disponível nesta versão."
+                )
+                return
+            
             reply = QMessageBox.question(
                 self,
                 "Verificar Atualizações",
-                "Deseja verificar se há atualizações disponíveis?",
+                "Deseja verificar se há atualizações disponíveis?\n\n"
+                "Esta verificação irá conectar ao GitHub para buscar novas versões.",
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                 QMessageBox.StandardButton.Yes
             )
             
             if reply == QMessageBox.StandardButton.Yes:
-                self._perform_update_check()
+                self.status_bar.showMessage("Verificando atualizações...", 0)
+                self.update_manager.check_for_updates(silent=False)
                 
         except Exception as e:
             logging.error(f"Error checking for updates: {e}")
@@ -2113,42 +2127,10 @@ class MainWindow(QMainWindow):
             )
 
     def _perform_update_check(self):
-        """Perform the actual update check process"""
-        try:
-            # Simulated update check process with progress
-            progress_dialog = QProgressDialog("Verificando atualizações...", "Cancelar", 0, 100, self)
-            progress_dialog.setWindowTitle("Verificação de Atualizações")
-            progress_dialog.setModal(True)
-            progress_dialog.setMinimumDuration(0)
-            progress_dialog.show()
-            
-            QApplication.processEvents()
-            
-            for i in range(101):
-                if progress_dialog.wasCanceled():
-                    return
-                progress_dialog.setValue(i)
-                QApplication.processEvents()
-                time.sleep(0.01)  # Simulate checking time
-            
-            progress_dialog.close()
-            
-            # Simulate result (always show "up to date" for this demo)
-            QMessageBox.information(
-                self,
-                "Verificação de Atualizações",
-                "Você está usando a versão mais recente do aplicativo!"
-            )
-            
-            self.status_bar.showMessage("Verificação de atualizações concluída", 3000)
-            
-        except Exception as e:
-            logging.error(f"Error performing update check: {e}")
-            QMessageBox.critical(
-                self,
-                "Erro",
-                f"Erro durante a verificação de atualizações: {str(e)}"
-            )
+        """Perform the actual update check process - DEPRECATED"""
+        # This method is kept for compatibility but no longer used
+        # The new UpdateManager handles all update checking
+        pass
 
     def _clear_all_data(self):
         """Clear all data from database"""

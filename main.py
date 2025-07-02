@@ -24,6 +24,7 @@ from PySide6.QtGui import QPixmap, QFont, QPainter, QColor, QLinearGradient
 from core.config_manager import ConfigManager
 from core.auth_manager import AuthManager
 from core.database_manager import DatabaseManager
+from core.update_manager import UpdateManager
 from ui.main_window import MainWindow
 from ui.splash_screen import ProfessionalSplashScreen
 from utils.logger import setup_logging
@@ -37,6 +38,7 @@ class XMLFiscalManagerApp:
         self.config = None
         self.auth_manager = None
         self.db_manager = None
+        self.update_manager = None
         self.main_window = None
         
     def initialize(self):
@@ -55,6 +57,9 @@ class XMLFiscalManagerApp:
             
             # Load configuration
             self.config = ConfigManager()
+            
+            # Initialize update manager
+            self.update_manager = UpdateManager(self.config)
             
             # Initialize authentication
             self.auth_manager = AuthManager(self.config)
@@ -113,6 +118,18 @@ class XMLFiscalManagerApp:
         except Exception as e:
             logging.error(f"Error showing splash screen: {e}")
     
+    def check_for_updates_on_startup(self):
+        """Check for updates automatically on startup if enabled"""
+        try:
+            if self.update_manager.should_check_automatically():
+                logging.info("Performing automatic update check on startup")
+                self.update_manager.check_for_updates(silent=True)
+                self.update_manager.update_last_check_time()
+            else:
+                logging.info("Automatic update check skipped (not due yet or disabled)")
+        except Exception as e:
+            logging.error(f"Error during startup update check: {e}")
+    
     def run(self):
         """Main application run method"""
         try:
@@ -132,7 +149,8 @@ class XMLFiscalManagerApp:
             self.main_window = MainWindow(
                 config=self.config,
                 auth_manager=self.auth_manager,
-                db_manager=self.db_manager
+                db_manager=self.db_manager,
+                update_manager=self.update_manager
             )
             
             self.main_window.show()
@@ -140,6 +158,9 @@ class XMLFiscalManagerApp:
             # Setup application icon
             if os.path.exists("assets/icon.ico"):
                 self.app.setWindowIcon(self.main_window.windowIcon())
+            
+            # Check for updates after the main window is shown
+            QTimer.singleShot(2000, self.check_for_updates_on_startup)
             
             # Run application
             logging.info("Application started successfully")

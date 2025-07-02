@@ -45,6 +45,15 @@ class ConfigManager:
                 "auto_logout_on_idle": True,
                 "idle_timeout_minutes": 30
             },
+            "update_settings": {
+                "auto_check": True,
+                "check_interval_hours": 24,
+                "github_repo": "edineicruz/XML",
+                "notify_beta": False,
+                "auto_download": False,
+                "last_check": "",
+                "dismissed_versions": []
+            },
             "ui_settings": {
                 "theme": "modern_dark",
                 "language": "pt_BR",
